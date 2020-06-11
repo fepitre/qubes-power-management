@@ -5,6 +5,8 @@ import sys
 import json
 import pyudev
 
+from multiprocessing import Process
+
 
 def udev_to_psp(dev):
     psp = {}
@@ -18,11 +20,23 @@ def udev_to_psp(dev):
     return psp
 
 
-context = pyudev.Context()
-monitor = pyudev.Monitor.from_netlink(context)
-monitor.filter_by(subsystem='power_supply')
+def monitor_udev():
+    context = pyudev.Context()
+    monitor = pyudev.Monitor.from_netlink(context)
+    monitor.filter_by(subsystem='power_supply')
 
-for device in iter(monitor.poll, None):
-    if device.action == 'change':
-        print(json.dumps(udev_to_psp(device)))
-        sys.stdout.flush()
+    for device in iter(monitor.poll, None):
+        if device.action == 'change':
+            print(json.dumps(udev_to_psp(device)))
+            sys.stdout.flush()
+
+
+def monitor():
+    pass
+
+
+if __name__ == '__main__':
+    p1 = Process(target=monitor())
+    p1.start()
+    p2 = Process(target=monitor_udev())
+    p2.start()
