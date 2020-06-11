@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import pyudev
+
+
+def udev_to_psp(dev):
+    psp = {}
+    for item in dev.items():
+        key, val = item
+        if key.startswith('POWER_SUPPLY_'):
+            psp_name = key.replace('POWER_SUPPLY_', '').lower()
+            psp.update({
+                psp_name: val
+            })
+    return psp
+
+
+context = pyudev.Context()
+monitor = pyudev.Monitor.from_netlink(context)
+monitor.filter_by(subsystem='power_supply')
+
+for device in iter(monitor.poll, None):
+    if device.action == 'change':
+        print(json.dumps(udev_to_psp(device)))
+        sys.stdout.flush()
